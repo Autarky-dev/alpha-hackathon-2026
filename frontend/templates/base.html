@@ -111,6 +111,9 @@
   {% endblock footer %}
 
   {# ── Scripts ────────────────────────────────────────────── #}
+  <script>
+    window.BACKEND_URL = {{ backend_url | tojson if backend_url else '""' }};
+  </script>
   <script src="{{ url_for('static', path='js/qrcode.min.js') }}"></script>
   <script src="{{ url_for('static', path='js/api.js') }}"></script>
   <script src="{{ url_for('static', path='js/main.js') }}"></script>

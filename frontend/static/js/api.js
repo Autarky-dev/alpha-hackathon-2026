@@ -6,8 +6,20 @@
 (function () {
   'use strict';
 
-  // Base URL for the FastAPI backend service
-  window.API_BASE = window.API_BASE || 'http://localhost:8000';
+  // Resolve base URL for the FastAPI backend service:
+  // 1. If window.API_BASE was already set by caller, honor it.
+  // 2. If window.BACKEND_URL was injected from backend_url template context / env var, use it.
+  // 3. If running locally on port 3000 (localhost or 127.0.0.1), fallback to http://localhost:8000.
+  // 4. Otherwise (e.g. production same-origin or reverse-proxy), use "" (relative requests).
+  if (typeof window.API_BASE === 'undefined' || window.API_BASE === null || window.API_BASE === '') {
+    if (typeof window.BACKEND_URL === 'string' && window.BACKEND_URL.trim() !== '') {
+      window.API_BASE = window.BACKEND_URL.trim().replace(/\/+$/, '');
+    } else if (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') {
+      window.API_BASE = window.location.port === '3000' ? 'http://localhost:8000' : '';
+    } else {
+      window.API_BASE = '';
+    }
+  }
   window.CURRENT_USER = null;
 
   /**
@@ -56,7 +68,7 @@
         ok: false,
         status: 0,
         data: null,
-        error: 'Unable to connect to SeatLock backend service at ' + window.API_BASE,
+        error: 'Unable to connect to SeatLock backend service' + (window.API_BASE ? ' at ' + window.API_BASE : ''),
       };
     }
   }

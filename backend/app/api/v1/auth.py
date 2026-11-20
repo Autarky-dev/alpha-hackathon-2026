@@ -77,8 +77,8 @@ def login(
         max_age=max_age_seconds,
         expires=max_age_seconds,
         httponly=True,
-        secure=settings.AUTH_COOKIE_SECURE,
-        samesite=settings.AUTH_COOKIE_SAMESITE,
+        secure=settings.cookie_secure,
+        samesite=settings.cookie_samesite,
         path="/",
     )
 
@@ -109,8 +109,8 @@ def logout(response: Response) -> MessageResponse:
         key=settings.AUTH_COOKIE_NAME,
         path="/",
         httponly=True,
-        secure=settings.AUTH_COOKIE_SECURE,
-        samesite=settings.AUTH_COOKIE_SAMESITE,
+        secure=settings.cookie_secure,
+        samesite=settings.cookie_samesite,
     )
     return MessageResponse(message="Logout successful")
 

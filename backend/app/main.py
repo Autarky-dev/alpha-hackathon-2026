@@ -52,10 +52,19 @@ app = FastAPI(
 # ---------------------------------------------------------------------------
 # CORS Middleware
 # ---------------------------------------------------------------------------
+# Support localhost on any port, all *.onrender.com domains, and any origins
+# configured in CORS_ORIGINS.
+_cors_regex = settings.CORS_ORIGIN_REGEX
+if not _cors_regex:
+    if settings.CORS_ALLOW_ALL_RENDER:
+        _cors_regex = r"^(https?://(localhost|127\.0\.0\.1)(:\d+)?|https://.*\.onrender\.com)$"
+    else:
+        _cors_regex = r"^https?://(localhost|127\.0\.0\.1)(:\d+)?$"
+
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=settings.CORS_ORIGINS,
-    allow_origin_regex=r"^https?://(localhost|127\.0\.0\.1)(:\d+)?$",
+    allow_origins=settings.cors_origins_list,
+    allow_origin_regex=_cors_regex,
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],

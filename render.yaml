@@ -1,0 +1,62 @@
+# ==============================================================================
+# Render Blueprint Specification for SeatLock
+# https://render.com/docs/blueprint-spec
+# ==============================================================================
+
+databases:
+  - name: seatlock-db
+    databaseName: seatlock
+    user: seatlock_user
+    plan: free
+    region: oregon
+    postgresMajorVersion: "16"
+
+services:
+  # ----------------------------------------------------------------------------
+  # 1. FastAPI Backend API Service
+  # ----------------------------------------------------------------------------
+  - type: web
+    name: seatlock-backend
+    runtime: python
+    region: oregon
+    plan: free
+    buildCommand: pip install -r requirements.txt
+    startCommand: uvicorn app.main:app --app-dir backend --host 0.0.0.0 --port $PORT --proxy-headers --forwarded-allow-ips "*"
+    preDeployCommand: python backend/scripts/init_db.py && python backend/scripts/seed_demo_data.py
+    healthCheckPath: /health
+    envVars:
+      - key: DATABASE_URL
+        fromDatabase:
+          name: seatlock-db
+          property: connectionString
+      - key: APP_ENV
+        value: production
+      - key: JWT_SECRET_KEY
+        generateValue: true
+      - key: AUTH_COOKIE_SECURE
+        value: "true"
+      - key: AUTH_COOKIE_SAMESITE
+        value: "none"
+      - key: CORS_ALLOW_ALL_RENDER
+        value: "true"
+      - key: CORS_ORIGINS
+        value: "https://seatlock-frontend.onrender.com"
+      - key: PYTHON_VERSION
+        value: "3.11.9"
+
+  # ----------------------------------------------------------------------------
+  # 2. Jinja2 + Vanilla JS Frontend Web Service
+  # ----------------------------------------------------------------------------
+  - type: web
+    name: seatlock-frontend
+    runtime: python
+    region: oregon
+    plan: free
+    buildCommand: pip install -r requirements.txt
+    startCommand: uvicorn preview:app --app-dir frontend --host 0.0.0.0 --port $PORT --proxy-headers --forwarded-allow-ips "*"
+    healthCheckPath: /health
+    envVars:
+      - key: BACKEND_URL
+        value: "https://seatlock-backend.onrender.com"
+      - key: PYTHON_VERSION
+        value: "3.11.9"

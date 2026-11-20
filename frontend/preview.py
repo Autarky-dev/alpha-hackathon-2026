@@ -13,6 +13,7 @@ This file is for DEVELOPMENT PREVIEW ONLY.
 Do NOT use this as the production application entry point.
 """
 
+import os
 from fastapi import FastAPI, Request
 from fastapi.responses import HTMLResponse
 from fastapi.staticfiles import StaticFiles
@@ -21,7 +22,10 @@ from pathlib import Path
 
 BASE_DIR = Path(__file__).resolve().parent
 
-app = FastAPI(title="SeatLock — Preview", docs_url=None, redoc_url=None)
+# Target backend API URL for production cross-origin deployment (e.g. Render)
+BACKEND_URL = os.getenv("BACKEND_URL", "").rstrip("/")
+
+app = FastAPI(title="SeatLock — Frontend", docs_url=None, redoc_url=None)
 
 # Mount static files
 app.mount(
@@ -42,6 +46,7 @@ def base_ctx(request: Request, active_page: str = "") -> dict:
         "current_user": None,
         "active_page": active_page,
         "flash_messages": [],
+        "backend_url": BACKEND_URL,
     }
 
 
@@ -60,24 +65,20 @@ async def root(request: Request):
 @app.get("/login", response_class=HTMLResponse, name="login")
 async def login(request: Request):
     return templates.TemplateResponse(request=request, name="login.html", context={
-        "request": request,
-        "current_user": None,
+        **base_ctx(request, "login"),
         "error": None,
         "field_errors": {},
         "form_values": {},
-        "flash_messages": [],
     })
 
 
 @app.post("/login", response_class=HTMLResponse, name="login_post")
 async def login_post(request: Request):
     return templates.TemplateResponse(request=request, name="login.html", context={
-        "request": request,
-        "current_user": None,
+        **base_ctx(request, "login"),
         "error": None,
         "field_errors": {},
         "form_values": {},
-        "flash_messages": [],
     })
 
 
@@ -108,23 +109,23 @@ async def my_bookings(request: Request):
 @app.get("/organizer", response_class=HTMLResponse, name="organizer_dashboard")
 async def organizer_dashboard(request: Request):
     return templates.TemplateResponse(request=request, name="organizer_dashboard.html", context={
-        "request": request,
-        "current_user": None,
-        "active_page": "organizer",
+        **base_ctx(request, "organizer"),
         "active_section": "overview",
-        "flash_messages": [],
     })
 
 
 @app.get("/admin", response_class=HTMLResponse, name="admin_dashboard")
 async def admin_dashboard(request: Request):
     return templates.TemplateResponse(request=request, name="admin_dashboard.html", context={
-        "request": request,
-        "current_user": None,
-        "active_page": "admin",
+        **base_ctx(request, "admin"),
         "active_section": "overview",
-        "flash_messages": [],
     })
+
+
+@app.get("/health", tags=["Health"])
+async def frontend_health():
+    """Health check endpoint for Render deployment."""
+    return {"status": "ok", "service": "SeatLock Frontend"}
 
 
 @app.get("/logout", response_class=HTMLResponse, name="logout")
