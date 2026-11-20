@@ -1,0 +1,177 @@
+{% extends "base.html" %}
+
+{% block title %}Sign In{% endblock %}
+{% block meta_description %}Sign in to SeatLock to book event seats.{% endblock %}
+{% block body_class %}login-page{% endblock %}
+
+{# No navbar on login page #}
+{% block navbar %}{% endblock %}
+{% block footer %}{% endblock %}
+
+{% block head_extra %}
+<link rel="stylesheet" href="{{ url_for('static', path='css/login.css') }}" />
+{% endblock %}
+
+{% block content %}
+<div class="login-layout">
+
+  {# ── Left panel: branding ── #}
+  <div class="login-brand" aria-hidden="true">
+    <div class="login-brand__inner">
+      <div class="login-brand__logo">
+        <div class="login-brand__logo-mark">SL</div>
+        <span class="login-brand__logo-name">Seat<span>Lock</span></span>
+      </div>
+      <p class="login-brand__tagline">Secure seats. Concurrency-safe reservations.</p>
+      <div class="login-brand__features">
+        <div class="login-feature">
+          <span class="login-feature__icon">🔒</span>
+          <div>
+            <div class="login-feature__title">Row-Level Seat Locking</div>
+            <div class="login-feature__desc">Seats held atomically for 5 minutes with zero double-booking risk.</div>
+          </div>
+        </div>
+        <div class="login-feature">
+          <span class="login-feature__icon">⚡</span>
+          <div>
+            <div class="login-feature__title">Real-time Availability</div>
+            <div class="login-feature__desc">Live seat layout synchronized across all devices.</div>
+          </div>
+        </div>
+        <div class="login-feature">
+          <span class="login-feature__icon">🎟️</span>
+          <div>
+            <div class="login-feature__title">Signed QR Tickets</div>
+            <div class="login-feature__desc">Cryptographically signed tickets and instantaneous gate check-in.</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  {# ── Right panel: form ── #}
+  <div class="login-form-panel">
+    <div class="login-form-card">
+
+      <div class="login-form-card__header">
+        <div class="navbar__logo-mark" style="margin-bottom: var(--space-5);" aria-hidden="true">SL</div>
+        <h1 class="login-form-card__title">Welcome back</h1>
+        <p class="login-form-card__subtitle">Sign in to access your account</p>
+      </div>
+
+      {# Dynamic Error Alert #}
+      <div id="login-error-alert" class="alert alert--error" role="alert" style="display:none; margin-bottom: var(--space-4);">
+        <span>⚠</span>
+        <span id="login-error-text">Invalid username or password</span>
+      </div>
+
+      {# Demo Credentials Quick Fill #}
+      <div style="margin-bottom: var(--space-4); padding: 12px; background: rgba(124, 58, 237, 0.08); border: 1px solid rgba(124, 58, 237, 0.2); border-radius: 8px;">
+        <span class="text-xs text-muted" style="display:block; margin-bottom: 8px; font-weight:600;">DEMO ONE-CLICK CREDENTIALS:</span>
+        <div style="display:flex; gap:6px; flex-wrap:wrap;">
+          <button type="button" class="btn btn-secondary btn-sm demo-chip" data-user="student_user" data-pass="StudentPass123!">Student</button>
+          <button type="button" class="btn btn-secondary btn-sm demo-chip" data-user="organizer_user" data-pass="OrganizerPass123!">Organizer</button>
+          <button type="button" class="btn btn-secondary btn-sm demo-chip" data-user="admin_user" data-pass="AdminPass123!">Admin</button>
+        </div>
+      </div>
+
+      <form id="login-form" class="login-form" novalidate>
+        <div class="form-group">
+          <label class="form-label" for="username">Username</label>
+          <input
+            class="form-input"
+            type="text"
+            id="username"
+            name="username"
+            autocomplete="username"
+            placeholder="student_user, organizer_user..."
+            required
+          />
+        </div>
+
+        <div class="form-group">
+          <div class="flex items-center justify-between">
+            <label class="form-label" for="password">Password</label>
+          </div>
+          <input
+            class="form-input"
+            type="password"
+            id="password"
+            name="password"
+            autocomplete="current-password"
+            placeholder="Enter your password"
+            required
+          />
+        </div>
+
+        <button type="submit" id="login-submit-btn" class="btn btn-primary btn-full btn-lg" style="margin-top: var(--space-2);">
+          Sign in
+        </button>
+      </form>
+
+      <p class="login-form-card__footer-note" style="margin-top: var(--space-6);">
+        Demo user credentials pre-configured in environment. Click any chip above to test.
+      </p>
+
+    </div>
+  </div>
+
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+  document.addEventListener('DOMContentLoaded', async () => {
+    // Demo credential chips
+    document.querySelectorAll('.demo-chip').forEach(btn => {
+      btn.addEventListener('click', () => {
+        document.getElementById('username').value = btn.dataset.user;
+        document.getElementById('password').value = btn.dataset.pass;
+      });
+    });
+
+    const form = document.getElementById('login-form');
+    const errorBox = document.getElementById('login-error-alert');
+    const errorText = document.getElementById('login-error-text');
+    const submitBtn = document.getElementById('login-submit-btn');
+
+    form.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      errorBox.style.display = 'none';
+
+      const username = document.getElementById('username').value.trim();
+      const password = document.getElementById('password').value;
+
+      if (!username || !password) {
+        errorText.textContent = 'Please provide both username and password.';
+        errorBox.style.display = 'flex';
+        return;
+      }
+
+      submitBtn.disabled = true;
+      submitBtn.textContent = 'Signing in...';
+
+      const res = await window.SeatLockAuth.login(username, password);
+
+      if (res.ok && res.data) {
+        window.showNotification('Login successful! Redirecting...', 'success');
+        const role = res.data.user.role;
+        setTimeout(() => {
+          if (role === 'organizer') {
+            window.location.href = '/organizer';
+          } else if (role === 'admin') {
+            window.location.href = '/admin';
+          } else {
+            window.location.href = '/events';
+          }
+        }, 500);
+      } else {
+        submitBtn.disabled = false;
+        submitBtn.textContent = 'Sign in';
+        errorText.textContent = res.error || 'Invalid username or password.';
+        errorBox.style.display = 'flex';
+      }
+    });
+  });
+</script>
+{% endblock %}

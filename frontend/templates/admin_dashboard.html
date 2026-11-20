@@ -1,0 +1,260 @@
+{% extends "base.html" %}
+
+{% block title %}Admin Dashboard{% endblock %}
+{% block meta_description %}SeatLock administration — users, events, bookings, audit log.{% endblock %}
+
+{% block head_extra %}
+<link rel="stylesheet" href="{{ url_for('static', path='css/dashboard.css') }}" />
+{% endblock %}
+
+{% block content %}
+<div class="page-wrapper">
+<div class="dashboard-layout">
+
+  {# ── Sidebar ── #}
+  <nav class="sidebar" aria-label="Admin navigation">
+    <p class="sidebar__section-label">System</p>
+
+    <a href="{{ url_for('admin_dashboard') }}"
+       class="sidebar__nav-link {% if active_section == 'overview' %}active{% endif %}">
+      <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+           stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+        <rect width="7" height="9" x="3" y="3" rx="1"/>
+        <rect width="7" height="5" x="14" y="3" rx="1"/>
+        <rect width="7" height="9" x="14" y="12" rx="1"/>
+        <rect width="7" height="5" x="3" y="16" rx="1"/>
+      </svg>
+      Overview
+    </a>
+
+    <a href="#users" class="sidebar__nav-link {% if active_section == 'users' %}active{% endif %}">
+      <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+           stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+        <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/>
+        <circle cx="9" cy="7" r="4"/>
+        <path d="M23 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75"/>
+      </svg>
+      Users
+      <span class="sidebar__nav-badge">12</span>
+    </a>
+
+    <a href="#events" class="sidebar__nav-link {% if active_section == 'events' %}active{% endif %}">
+      <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+           stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+        <rect width="18" height="18" x="3" y="4" rx="2"/><line x1="16" x2="16" y1="2" y2="6"/>
+        <line x1="8" x2="8" y1="2" y2="6"/><line x1="3" x2="21" y1="10" y2="10"/>
+      </svg>
+      Events
+      <span class="sidebar__nav-badge">6</span>
+    </a>
+
+    <a href="#bookings" class="sidebar__nav-link {% if active_section == 'bookings' %}active{% endif %}">
+      <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+           stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+        <path d="M2 9a3 3 0 0 1 0 6v2a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-2a3 3 0 0 1 0-6V7a2 2 0 0 0-2-2H4a2 2 0 0 0-2 2Z"/>
+        <path d="M13 5v2M13 17v2M13 11v2"/>
+      </svg>
+      Bookings
+      <span class="sidebar__nav-badge">1,284</span>
+    </a>
+
+    <a href="#audit" class="sidebar__nav-link {% if active_section == 'audit' %}active{% endif %}">
+      <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+           stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+        <path d="M14.5 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7.5L14.5 2z"/>
+        <polyline points="14 2 14 8 20 8"/><line x1="16" x2="8" y1="13" y2="13"/>
+        <line x1="16" x2="8" y1="17" y2="17"/><line x1="10" x2="8" y1="9" y2="9"/>
+      </svg>
+      Audit Log
+    </a>
+
+    <hr class="divider" style="margin-block: var(--space-4);" />
+
+    <a href="#" class="sidebar__nav-link admin-danger-link">
+      <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+           stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+        <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/>
+        <line x1="12" x2="12" y1="9" y2="13"/><line x1="12" x2="12.01" y1="17" y2="17"/>
+      </svg>
+      System alerts
+      <span class="sidebar__nav-badge" style="background:var(--color-danger-soft);color:var(--color-danger);border-color:rgba(239,68,68,.25);">2</span>
+    </a>
+  </nav>
+
+  {# ── Main content ── #}
+  <div class="dashboard-content">
+
+    <div class="dash-header">
+      <div>
+        <span class="admin-badge-role">Admin</span>
+        <h1 class="dash-header__title">System Dashboard</h1>
+        <p class="text-sm text-muted">Full platform visibility and control.</p>
+      </div>
+    </div>
+
+    {# ── Platform stats ── #}
+    <div class="stats-grid">
+      <div class="stat-card">
+        <div class="flex items-center justify-between">
+          <span class="stat-card__label">Platform users</span>
+          <div class="stat-card__icon stat-card__icon--accent">👤</div>
+        </div>
+        <div class="stat-card__value" id="stat-total-users">3</div>
+        <div class="stat-card__sub">Seeded system accounts</div>
+      </div>
+      <div class="stat-card">
+        <div class="flex items-center justify-between">
+          <span class="stat-card__label">Active events</span>
+          <div class="stat-card__icon stat-card__icon--success">🗓️</div>
+        </div>
+        <div class="stat-card__value" id="stat-total-events">0</div>
+        <div class="stat-card__sub">Across all organizers</div>
+      </div>
+      <div class="stat-card">
+        <div class="flex items-center justify-between">
+          <span class="stat-card__label">Total capacity</span>
+          <div class="stat-card__icon stat-card__icon--warning">💺</div>
+        </div>
+        <div class="stat-card__value" id="stat-total-capacity">0</div>
+        <div class="stat-card__sub">Inventory seats</div>
+      </div>
+      <div class="stat-card">
+        <div class="flex items-center justify-between">
+          <span class="stat-card__label">Sharded Audit Logs</span>
+          <div class="stat-card__icon stat-card__icon--danger">📜</div>
+        </div>
+        <div class="stat-card__value" id="stat-total-audits">0</div>
+        <div class="stat-card__sub">Federated across 4 shards</div>
+      </div>
+    </div>
+
+    {# ── Users section ── #}
+    <section class="dash-section" id="users" aria-labelledby="users-heading">
+      <div class="dash-section__header">
+        <h2 class="dash-section__title" id="users-heading">Users</h2>
+        <div class="flex gap-2 items-center">
+          <div class="search-bar" style="width:200px;">
+            <svg class="search-bar__icon" width="14" height="14" viewBox="0 0 24 24"
+                 fill="none" stroke="currentColor" stroke-width="2"
+                 stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+              <circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/>
+            </svg>
+            <input type="search" class="form-input" placeholder="Search users…" aria-label="Search users" />
+          </div>
+          <select class="form-select" style="width:auto;" aria-label="Filter by role">
+            <option>All roles</option>
+            <option>Admin</option>
+            <option>Organizer</option>
+            <option>Attendee</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="table-wrapper">
+        <table aria-label="Platform users">
+          <thead>
+            <tr>
+              <th>User</th>
+              <th>Role</th>
+              <th>Bookings</th>
+              <th>Joined</th>
+              <th>Status</th>
+              <th><span class="sr-only">Actions</span></th>
+            </tr>
+          </thead>
+          <tbody>
+            {% set users = [
+              {"name":"Anjali Redd","email":"anjali@seatlock.dev","role":"admin","bookings":0,"joined":"10 Oct 2026","active":true},
+              {"name":"Dev Patel","email":"dev@seatlock.dev","role":"organizer","bookings":0,"joined":"12 Oct 2026","active":true},
+              {"name":"Aarav Mehta","email":"aarav@example.com","role":"attendee","bookings":2,"joined":"14 Oct 2026","active":true},
+              {"name":"Priya Nair","email":"priya@example.com","role":"attendee","bookings":1,"joined":"16 Oct 2026","active":true},
+              {"name":"Rohan Sharma","email":"rohan@example.com","role":"attendee","bookings":3,"joined":"18 Oct 2026","active":false}
+            ] %}
+            {% for u in users %}
+            <tr>
+              <td>
+                <div class="attendee-cell">
+                  <div class="attendee-avatar {% if u.role == 'admin' %}attendee-avatar--admin{% elif u.role == 'organizer' %}attendee-avatar--organizer{% endif %}">
+                    {{ u.name[0] }}
+                  </div>
+                  <div>
+                    <div class="font-medium text-sm">{{ u.name }}</div>
+                    <div class="text-xs text-muted">{{ u.email }}</div>
+                  </div>
+                </div>
+              </td>
+              <td>
+                {% if u.role == 'admin' %}
+                  <span class="badge badge--danger">Admin</span>
+                {% elif u.role == 'organizer' %}
+                  <span class="badge badge--accent">Organizer</span>
+                {% else %}
+                  <span class="badge badge--default">Attendee</span>
+                {% endif %}
+              </td>
+              <td class="text-sm text-muted">{{ u.bookings }}</td>
+              <td class="text-sm text-muted">{{ u.joined }}</td>
+              <td>
+                {% if u.active %}
+                  <span class="badge badge--success badge--dot">Active</span>
+                {% else %}
+                  <span class="badge badge--default">Inactive</span>
+                {% endif %}
+              </td>
+              <td>
+                <div class="flex gap-2">
+                  <button class="btn btn-ghost btn-sm">Edit</button>
+                  {% if u.active %}
+                  <button class="btn btn-danger btn-sm">Suspend</button>
+                  {% else %}
+                  <button class="btn btn-success btn-sm">Restore</button>
+                  {% endif %}
+                </div>
+              </td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    {# ── Audit log ── #}
+    <section class="dash-section" id="audit" aria-labelledby="audit-heading">
+      <div class="dash-section__header">
+        <div>
+          <h2 class="dash-section__title" id="audit-heading">Audit Log (Federated 4-Shard Engine)</h2>
+          <span class="text-xs text-muted">Partitioned across audit_logs_0, audit_logs_1, audit_logs_2, audit_logs_3</span>
+        </div>
+        <div class="flex gap-2 items-center">
+          <select id="audit-action-filter" class="form-select" style="width: auto; font-size: var(--text-xs);" aria-label="Filter by action">
+            <option value="">All actions</option>
+            <option value="LOGIN">LOGIN</option>
+            <option value="LOGOUT">LOGOUT</option>
+            <option value="SEAT_HOLD">SEAT_HOLD</option>
+            <option value="BOOKING_CONFIRMED">BOOKING_CONFIRMED</option>
+            <option value="CHECKIN">CHECKIN</option>
+            <option value="BOOKING_CANCELLED">BOOKING_CANCELLED</option>
+            <option value="EVENT_CREATED">EVENT_CREATED</option>
+            <option value="EVENT_UPDATED">EVENT_UPDATED</option>
+          </select>
+          <button id="audit-refresh-btn" class="btn btn-secondary btn-sm">Refresh</button>
+        </div>
+      </div>
+
+      <div class="audit-log card">
+        <div id="audit-entries-container" class="card__body" style="padding: 0;">
+          <div style="padding: var(--space-6); text-align: center;" class="text-sm text-muted">
+            Loading federated audit records...
+          </div>
+        </div>
+      </div>
+    </section>
+
+  </div>{# /dashboard-content #}
+</div>{# /dashboard-layout #}
+</div>{# /page-wrapper #}
+{% endblock %}
+
+{% block scripts %}
+<script src="{{ url_for('static', path='js/admin.js') }}"></script>
+{% endblock %}

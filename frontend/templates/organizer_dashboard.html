@@ -1,0 +1,310 @@
+{% extends "base.html" %}
+
+{% block title %}Organizer Dashboard{% endblock %}
+{% block meta_description %}Manage your events, attendees and check-in.{% endblock %}
+
+{% block head_extra %}
+<link rel="stylesheet" href="{{ url_for('static', path='css/dashboard.css') }}" />
+{% endblock %}
+
+{% block content %}
+<div class="page-wrapper">
+<div class="dashboard-layout">
+
+  {# ── Sidebar ── #}
+  <nav class="sidebar" aria-label="Organizer navigation">
+    <p class="sidebar__section-label">Manage</p>
+
+    <a href="{{ url_for('organizer_dashboard') }}"
+       class="sidebar__nav-link {% if active_section == 'overview' %}active{% endif %}">
+      <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+           stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+        <rect width="7" height="9" x="3" y="3" rx="1"/>
+        <rect width="7" height="5" x="14" y="3" rx="1"/>
+        <rect width="7" height="9" x="14" y="12" rx="1"/>
+        <rect width="7" height="5" x="3" y="16" rx="1"/>
+      </svg>
+      Overview
+    </a>
+    <a href="#" class="sidebar__nav-link {% if active_section == 'events' %}active{% endif %}">
+      <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+           stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+        <rect width="18" height="18" x="3" y="4" rx="2"/><line x1="16" x2="16" y1="2" y2="6"/>
+        <line x1="8" x2="8" y1="2" y2="6"/><line x1="3" x2="21" y1="10" y2="10"/>
+      </svg>
+      My Events
+      <span class="sidebar__nav-badge">3</span>
+    </a>
+    <a href="#" class="sidebar__nav-link {% if active_section == 'attendees' %}active{% endif %}">
+      <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+           stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+        <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/>
+        <circle cx="9" cy="7" r="4"/>
+        <path d="M23 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75"/>
+      </svg>
+      Attendees
+    </a>
+    <a href="#" class="sidebar__nav-link {% if active_section == 'checkin' %}active{% endif %}">
+      <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+           stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+        <path d="M20 6 9 17l-5-5"/>
+      </svg>
+      Check-in
+    </a>
+
+    <hr class="divider" style="margin-block: var(--space-4);" />
+
+    <p class="sidebar__section-label">Settings</p>
+    <a href="#" class="sidebar__nav-link">
+      <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+           stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+        <path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z"/>
+        <circle cx="12" cy="12" r="3"/>
+      </svg>
+      Event settings
+    </a>
+  </nav>
+
+  {# ── Main content ── #}
+  <div class="dashboard-content">
+
+    {# Page title #}
+    <div class="dash-header">
+      <div>
+        <h1 class="dash-header__title">Organizer Dashboard</h1>
+        <p class="dash-header__sub text-sm text-muted">
+          Manage your events and track attendees.
+        </p>
+      </div>
+      <button id="open-create-event-btn" class="btn btn-primary btn-sm">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+             stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <path d="M5 12h14M12 5l7 7-7 7"/>
+        </svg>
+        Create event
+      </button>
+    </div>
+
+    {# ── Stat cards ── #}
+    <div class="stats-grid">
+      <div class="stat-card">
+        <div class="flex items-center justify-between">
+          <span class="stat-card__label">Total events</span>
+          <div class="stat-card__icon stat-card__icon--accent">🗓️</div>
+        </div>
+        <div class="stat-card__value" id="stat-total-events">0</div>
+        <div class="stat-card__sub" id="stat-events-sub">Created by you</div>
+      </div>
+      <div class="stat-card">
+        <div class="flex items-center justify-between">
+          <span class="stat-card__label">Total bookings</span>
+          <div class="stat-card__icon stat-card__icon--success">🎟️</div>
+        </div>
+        <div class="stat-card__value" id="stat-total-bookings">0</div>
+        <div class="stat-card__sub">Across all events</div>
+      </div>
+      <div class="stat-card">
+        <div class="flex items-center justify-between">
+          <span class="stat-card__label">Seats available</span>
+          <div class="stat-card__icon stat-card__icon--warning">💺</div>
+        </div>
+        <div class="stat-card__value" id="stat-seats-available">0</div>
+        <div class="stat-card__sub">Total remaining</div>
+      </div>
+      <div class="stat-card">
+        <div class="flex items-center justify-between">
+          <span class="stat-card__label">Checked in</span>
+          <div class="stat-card__icon stat-card__icon--success">✅</div>
+        </div>
+        <div class="stat-card__value" id="stat-checked-in">0</div>
+        <div class="stat-card__sub">Attendees verified</div>
+      </div>
+    </div>
+
+    {# ── My events table ── #}
+    <section class="dash-section" aria-labelledby="events-heading">
+      <div class="dash-section__header">
+        <h2 class="dash-section__title" id="events-heading">My Events</h2>
+        <span class="text-xs text-muted">Owned by current organizer</span>
+      </div>
+
+      <div class="table-wrapper">
+        <table aria-label="Your events">
+          <thead>
+            <tr>
+              <th>Event</th>
+              <th>Date</th>
+              <th>Venue</th>
+              <th>Capacity</th>
+              <th>Status</th>
+              <th>Actions</th>
+            </tr>
+          </thead>
+          <tbody id="events-table-body">
+            <tr>
+              <td colspan="6" class="text-center text-muted" style="padding: var(--space-6);">
+                Loading organizer events...
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    {# ── Attendee management ── #}
+    <section class="dash-section" aria-labelledby="attendees-heading">
+      <div class="dash-section__header">
+        <h2 class="dash-section__title" id="attendees-heading">Attendee Manifest</h2>
+        <div class="flex gap-2">
+          <div class="search-bar" style="width:220px;">
+            <svg class="search-bar__icon" width="14" height="14" viewBox="0 0 24 24"
+                 fill="none" stroke="currentColor" stroke-width="2"
+                 stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+              <circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/>
+            </svg>
+            <input type="search" id="attendee-search-input" class="form-input" placeholder="Search attendees…" aria-label="Search attendees" />
+          </div>
+          <select id="attendee-event-select" class="form-select" aria-label="Filter by event" style="width:auto;">
+            <option value="">Select an event...</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="table-wrapper">
+        <table aria-label="Event attendees">
+          <thead>
+            <tr>
+              <th>Attendee</th>
+              <th>Seat(s)</th>
+              <th>Booking ID</th>
+              <th>Status</th>
+              <th>Check-in Time</th>
+              <th>Gate Action</th>
+            </tr>
+          </thead>
+          <tbody id="attendees-table-body">
+            <tr>
+              <td colspan="6" class="text-center text-muted" style="padding: var(--space-6);">
+                Select an event above to view attendee manifest.
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    {# ── Gate QR Check-In Tool ── #}
+    <section class="dash-section" id="gate-checkin-section" aria-labelledby="gate-heading">
+      <div class="dash-section__header">
+        <h2 class="dash-section__title" id="gate-heading">Venue Gate QR Check-In</h2>
+        <span class="text-xs text-muted">Scan QR token or paste booking UUID</span>
+      </div>
+
+      <div class="card" style="padding: var(--space-5);">
+        <div class="flex gap-3" style="flex-wrap: wrap;">
+          <select id="gate-event-select" class="form-select" style="min-width: 200px;">
+            <option value="">Select target event...</option>
+          </select>
+          <input
+            type="text"
+            id="gate-token-input"
+            class="form-input"
+            placeholder="Paste scanned QR Ticket Token or Booking UUID..."
+            style="flex: 1; min-width: 280px;"
+          />
+          <button id="gate-checkin-btn" class="btn btn-primary">
+            Gate Check-In
+          </button>
+        </div>
+        <div id="gate-result-box" style="margin-top: var(--space-4); display: none;"></div>
+      </div>
+    </section>
+
+  </div>{# /dashboard-content #}
+</div>{# /dashboard-layout #}
+</div>{# /page-wrapper #}
+
+{# ── Create Event Modal ── #}
+<div id="create-event-modal" class="modal-backdrop" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.75); z-index:1000; align-items:center; justify-content:center;">
+  <div class="card" style="max-width:520px; width:92%; padding:var(--space-6); background:var(--color-surface); border:1px solid var(--color-border); border-radius:12px; position:relative;">
+    <button id="close-create-modal" style="position:absolute; top:16px; right:16px; background:none; border:none; color:var(--color-text-secondary); cursor:pointer; font-size:18px;">✕</button>
+    <h2 style="font-size:1.25rem; font-weight:700; margin-bottom:16px;">Create New Event</h2>
+
+    <form id="create-event-form">
+      <div class="form-group" style="margin-bottom:12px;">
+        <label class="form-label">Event Title</label>
+        <input type="text" id="ce-title" class="form-input" placeholder="e.g. NextGen Web & AI Summit" required />
+      </div>
+
+      <div class="form-group" style="margin-bottom:12px;">
+        <label class="form-label">Venue / Location</label>
+        <input type="text" id="ce-location" class="form-input" placeholder="e.g. Auditorium A, Tech Campus" required />
+      </div>
+
+      <div class="flex gap-3" style="margin-bottom:12px;">
+        <div class="form-group" style="flex:1;">
+          <label class="form-label">Start Time (UTC)</label>
+          <input type="datetime-local" id="ce-start-time" class="form-input" required />
+        </div>
+        <div class="form-group" style="flex:1;">
+          <label class="form-label">Booking Close (UTC)</label>
+          <input type="datetime-local" id="ce-close-time" class="form-input" required />
+        </div>
+      </div>
+
+      <div class="form-group" style="margin-bottom:16px;">
+        <label class="form-label">Total Seating Capacity (1–1000)</label>
+        <input type="number" id="ce-seats" class="form-input" value="40" min="1" max="1000" required />
+      </div>
+
+      <button type="submit" id="ce-submit-btn" class="btn btn-primary btn-full">Create Event & Initialize Seats</button>
+    </form>
+  </div>
+</div>
+
+{# ── Edit Event OCC Modal ── #}
+<div id="edit-event-modal" class="modal-backdrop" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.75); z-index:1000; align-items:center; justify-content:center;">
+  <div class="card" style="max-width:520px; width:92%; padding:var(--space-6); background:var(--color-surface); border:1px solid var(--color-border); border-radius:12px; position:relative;">
+    <button id="close-edit-modal" style="position:absolute; top:16px; right:16px; background:none; border:none; color:var(--color-text-secondary); cursor:pointer; font-size:18px;">✕</button>
+    <h2 style="font-size:1.25rem; font-weight:700; margin-bottom:4px;">Edit Event</h2>
+    <p class="text-xs text-muted" style="margin-bottom:16px;">Optimistic Concurrency Control (OCC) enabled</p>
+
+    <form id="edit-event-form">
+      <input type="hidden" id="ee-id" />
+      <input type="hidden" id="ee-version" />
+
+      <div class="form-group" style="margin-bottom:12px;">
+        <label class="form-label">Title</label>
+        <input type="text" id="ee-title" class="form-input" required />
+      </div>
+
+      <div class="form-group" style="margin-bottom:12px;">
+        <label class="form-label">Location</label>
+        <input type="text" id="ee-location" class="form-input" required />
+      </div>
+
+      <div class="flex gap-3" style="margin-bottom:12px;">
+        <div class="form-group" style="flex:1;">
+          <label class="form-label">Start Time</label>
+          <input type="datetime-local" id="ee-start-time" class="form-input" required />
+        </div>
+        <div class="form-group" style="flex:1;">
+          <label class="form-label">Booking Close</label>
+          <input type="datetime-local" id="ee-close-time" class="form-input" required />
+        </div>
+      </div>
+
+      <div class="form-group" style="margin-bottom:16px;">
+        <label class="form-label">Total Seats</label>
+        <input type="number" id="ee-seats" class="form-input" min="1" max="1000" required />
+      </div>
+
+      <button type="submit" id="ee-submit-btn" class="btn btn-primary btn-full">Save Changes (Version Check)</button>
+    </form>
+  </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script src="{{ url_for('static', path='js/organizer.js') }}"></script>
+{% endblock %}

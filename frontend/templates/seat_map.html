@@ -1,0 +1,238 @@
+{% extends "base.html" %}
+
+{% block title %}Select Seats — {{ event.title if event else 'Event' }}{% endblock %}
+{% block meta_description %}Choose your seats for {{ event.title if event else 'this event' }}.{% endblock %}
+
+{% block head_extra %}
+<link rel="stylesheet" href="{{ url_for('static', path='css/seat_map.css') }}" />
+{% endblock %}
+
+{% block content %}
+<div class="page-wrapper">
+
+{# ── Event banner ── #}
+{% set evt = event if event else {
+  "id": "evt-001",
+  "title": "Echoes of the Night — Live Concert",
+  "date": "Sat, 6 Dec 2026",
+  "time": "7:30 PM",
+  "venue": "The Forum, Mumbai",
+  "category": "Music",
+  "total_seats": 1200,
+  "available_seats": 84
+} %}
+
+<div class="seat-event-banner">
+  <div class="container seat-event-banner__inner">
+    <a href="{{ url_for('events') }}" class="btn btn-ghost btn-sm seat-event-banner__back">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none"
+           stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+        <path d="M19 12H5M12 5l-7 7 7 7"/>
+      </svg>
+      All events
+    </a>
+    <div class="seat-event-banner__details">
+      <span class="badge badge--accent">{{ evt.category }}</span>
+      <h1 class="seat-event-banner__title">{{ evt.title }}</h1>
+      <div class="seat-event-banner__meta">
+        <span>
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none"
+               stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <rect width="18" height="18" x="3" y="4" rx="2"/><line x1="16" x2="16" y1="2" y2="6"/>
+            <line x1="8" x2="8" y1="2" y2="6"/><line x1="3" x2="21" y1="10" y2="10"/>
+          </svg>
+          {{ evt.date }} · {{ evt.time }}
+        </span>
+        <span>
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none"
+               stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0Z"/><circle cx="12" cy="10" r="3"/>
+          </svg>
+          {{ evt.venue }}
+        </span>
+        <span>
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none"
+               stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/>
+            <path d="M23 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75"/>
+          </svg>
+          {{ evt.available_seats }} seats available
+        </span>
+      </div>
+    </div>
+  </div>
+</div>
+
+{# ── Main content: seat map + sidebar ── #}
+<div class="container seat-layout">
+
+  {# ── Left: seat map ── #}
+  <section class="seat-map-section" aria-label="Seat selection map">
+
+    {# Stage indicator #}
+    <div class="stage-indicator" aria-hidden="true">
+      <div class="stage-indicator__bar">STAGE / SCREEN</div>
+    </div>
+
+    {# Legend #}
+    <div class="seat-legend" role="list" aria-label="Seat status legend">
+      <div class="seat-legend__item" role="listitem">
+        <span class="seat seat--available" aria-hidden="true"></span>
+        <span class="seat-legend__label">Available</span>
+      </div>
+      <div class="seat-legend__item" role="listitem">
+        <span class="seat seat--selected" aria-hidden="true"></span>
+        <span class="seat-legend__label">Selected</span>
+      </div>
+      <div class="seat-legend__item" role="listitem">
+        <span class="seat seat--held" aria-hidden="true"></span>
+        <span class="seat-legend__label">Held</span>
+      </div>
+      <div class="seat-legend__item" role="listitem">
+        <span class="seat seat--booked" aria-hidden="true"></span>
+        <span class="seat-legend__label">Booked</span>
+      </div>
+    </div>
+
+    {# Seat grid — rendered by JS from seat data; placeholder rows shown here #}
+    <div class="seat-map" id="seat-map"
+         data-event-id="{{ evt.id }}"
+         data-max-select="4"
+         role="grid"
+         aria-label="Seat grid — click to select">
+
+      {#
+        In production, seat rows are injected by seat_map.js using JSON
+        from the API. The rows below are placeholder markup to demonstrate
+        layout before JS loads.
+      #}
+
+      {% set row_labels = ['A','B','C','D','E','F','G','H','J','K'] %}
+      {% set cols = 12 %}
+
+      {# Hardcoded demo seat states for preview #}
+      {% set booked_seats = [(0,2),(0,3),(1,5),(1,6),(2,0),(2,1),(3,8),(3,9),(4,4),(4,5),(5,2),(5,3),(6,10),(6,11),(7,0),(8,6),(9,3),(9,4)] %}
+      {% set held_seats   = [(0,7),(1,10),(3,3),(5,8),(7,7),(8,2)] %}
+
+      {% for r in range(row_labels | length) %}
+      <div class="seat-row" role="row" data-row="{{ row_labels[r] }}">
+        <span class="seat-row__label" aria-hidden="true">{{ row_labels[r] }}</span>
+        <div class="seat-row__seats" role="rowgroup">
+          {% for c in range(cols) %}
+            {% set is_booked = (r,c) in booked_seats %}
+            {% set is_held   = (r,c) in held_seats %}
+            {% if is_booked %}
+              <button class="seat seat--booked"
+                      disabled
+                      aria-label="Row {{ row_labels[r] }} seat {{ c+1 }} — booked"
+                      title="Booked">{{ c+1 }}</button>
+            {% elif is_held %}
+              <button class="seat seat--held"
+                      disabled
+                      aria-label="Row {{ row_labels[r] }} seat {{ c+1 }} — held"
+                      title="Held by another user">{{ c+1 }}</button>
+            {% else %}
+              <button class="seat seat--available"
+                      data-seat-id="{{ row_labels[r] }}{{ c+1 }}"
+                      data-row="{{ row_labels[r] }}"
+                      data-col="{{ c+1 }}"
+                      aria-label="Row {{ row_labels[r] }} seat {{ c+1 }} — available"
+                      aria-pressed="false"
+                      title="Available — click to select">{{ c+1 }}</button>
+            {% endif %}
+          {% endfor %}
+        </div>
+        <span class="seat-row__label" aria-hidden="true">{{ row_labels[r] }}</span>
+      </div>
+      {% endfor %}
+
+    </div>
+
+    <p class="seat-map__hint text-xs text-muted text-center" style="margin-top: var(--space-4);">
+      Select up to 4 seats. Seats are held for 10 minutes once you proceed.
+    </p>
+  </section>
+
+  {# ── Right: booking summary sidebar ── #}
+  <aside class="seat-sidebar" aria-label="Booking summary">
+    <div class="seat-sidebar__card card">
+
+      <div class="card__header">
+        <h2 class="text-base font-semibold">Your selection</h2>
+      </div>
+
+      <div class="card__body seat-sidebar__body">
+
+        {# Empty state (shown when no seats selected) #}
+        <div class="seat-sidebar__empty" id="seat-sidebar-empty">
+          <div class="empty-state" style="padding: var(--space-8) 0;">
+            <div class="empty-state__icon" style="font-size: 1.75rem;">💺</div>
+            <p class="empty-state__title" style="font-size: var(--text-sm);">No seats selected</p>
+            <p class="empty-state__text">Click on an available seat in the map.</p>
+          </div>
+        </div>
+
+        {# Selected seat list (shown/updated by JS) #}
+        <div class="seat-sidebar__selected" id="seat-sidebar-selected" hidden>
+          <ul class="selected-seat-list" id="selected-seat-list" role="list" aria-live="polite" aria-label="Selected seats">
+            {# Injected by seat_map.js #}
+          </ul>
+
+          <hr class="divider" />
+
+          <div class="seat-sidebar__summary">
+            <div class="seat-sidebar__summary-row">
+              <span class="text-sm text-muted">Seats selected</span>
+              <span class="text-sm font-semibold" id="summary-count">0</span>
+            </div>
+            <div class="seat-sidebar__summary-row">
+              <span class="text-sm text-muted">Hold duration</span>
+              <span class="text-sm font-medium">10 min</span>
+            </div>
+          </div>
+        </div>
+
+      </div>
+
+      <div class="card__footer seat-sidebar__footer">
+        <button class="btn btn-primary btn-full" id="hold-btn" disabled>
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none"
+               stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <rect width="11" height="11" x="3" y="11" rx="2" ry="2"/>
+            <path d="M7 11V7a5 5 0 0 1 10 0v4"/>
+          </svg>
+          Hold seats
+        </button>
+        <p class="text-xs text-muted text-center" style="margin-top: var(--space-3);">
+          Holding does not complete your booking. You'll confirm on the next step.
+        </p>
+      </div>
+
+    </div>
+
+    {# Hold timer (shown after hold is initiated) #}
+    <div class="hold-timer card" id="hold-timer" hidden>
+      <div class="card__body">
+        <p class="text-xs text-muted" style="margin-bottom: var(--space-2);">Seats held — time remaining</p>
+        <div class="hold-timer__countdown" id="hold-countdown" aria-live="polite" aria-label="Hold countdown">10:00</div>
+        <div class="avail-bar" style="margin-top: var(--space-3);">
+          <div class="avail-bar__fill" id="hold-timer-bar" style="width: 100%; background: var(--color-accent);"></div>
+        </div>
+        <button class="btn btn-success btn-full" style="margin-top: var(--space-4);" id="confirm-btn">
+          Confirm booking
+        </button>
+        <button class="btn btn-ghost btn-full btn-sm" style="margin-top: var(--space-2);" id="release-btn">
+          Release seats
+        </button>
+      </div>
+    </div>
+
+  </aside>
+
+</div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script src="{{ url_for('static', path='js/seat_map.js') }}"></script>
+{% endblock %}

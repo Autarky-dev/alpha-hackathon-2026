@@ -1,0 +1,120 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="description" content="{% block meta_description %}SeatLock — Secure event seat booking{% endblock %}" />
+  <title>{% block title %}SeatLock{% endblock %} — SeatLock</title>
+
+  <!-- Design system -->
+  <link rel="stylesheet" href="{{ url_for('static', path='css/style.css') }}" />
+
+  <!-- Page-specific CSS -->
+  {% block head_extra %}{% endblock %}
+
+  <!-- Favicon placeholder (SVG inline) -->
+  <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><rect width='32' height='32' rx='6' fill='%237c3aed'/><text y='22' x='7' font-size='16' font-family='system-ui' font-weight='bold' fill='white'>SL</text></svg>" />
+</head>
+<body class="{% block body_class %}{% endblock %}">
+
+  {# ── Navbar (hidden on login page) ─────────────────────── #}
+  {% block navbar %}
+  <nav class="navbar" role="navigation" aria-label="Main navigation">
+    <div class="container navbar__inner">
+
+      <a href="{{ url_for('events') }}" class="navbar__brand" aria-label="SeatLock home">
+        <div class="navbar__logo-mark" aria-hidden="true">SL</div>
+        <span class="navbar__brand-name">Seat<span>Lock</span></span>
+      </a>
+
+      <ul class="navbar__nav" id="main-nav" role="list">
+        <li>
+          <a href="{{ url_for('events') }}"
+             class="navbar__nav-link {% if active_page == 'events' %}active{% endif %}">
+            Events
+          </a>
+        </li>
+        <li>
+          <a href="{{ url_for('my_bookings') }}"
+             class="navbar__nav-link {% if active_page == 'my_bookings' %}active{% endif %}">
+            My Bookings
+          </a>
+        </li>
+        {% if current_user and current_user.role == 'organizer' %}
+        <li>
+          <a href="{{ url_for('organizer_dashboard') }}"
+             class="navbar__nav-link {% if active_page == 'organizer' %}active{% endif %}">
+            Dashboard
+          </a>
+        </li>
+        {% endif %}
+        {% if current_user and current_user.role == 'admin' %}
+        <li>
+          <a href="{{ url_for('admin_dashboard') }}"
+             class="navbar__nav-link {% if active_page == 'admin' %}active{% endif %}">
+            Admin
+          </a>
+        </li>
+        {% endif %}
+      </ul>
+
+      <div class="navbar__actions">
+        {% if current_user %}
+        <div class="navbar__user" aria-label="User menu">
+          <div class="navbar__avatar" aria-hidden="true">
+            {{ current_user.name[0] | upper if current_user.name else 'U' }}
+          </div>
+          <span class="navbar__user-name">{{ current_user.name }}</span>
+        </div>
+        <a href="{{ url_for('logout') }}" class="btn btn-ghost btn-sm">Sign out</a>
+        {% else %}
+        <a href="{{ url_for('login') }}" class="btn btn-primary btn-sm">Sign in</a>
+        {% endif %}
+
+        <button class="navbar__hamburger" id="hamburger-btn"
+                aria-label="Toggle navigation" aria-expanded="false"
+                aria-controls="main-nav">
+          <span></span>
+          <span></span>
+          <span></span>
+        </button>
+      </div>
+
+    </div>
+  </nav>
+  {% endblock navbar %}
+
+  {# ── Flash messages ─────────────────────────────────────── #}
+  {% if flash_messages %}
+  <div class="flash-container container" style="padding-top: calc(var(--navbar-height) + var(--space-4)); position: relative; z-index: 50;">
+    {% for category, message in flash_messages %}
+    <div class="alert alert--{{ category }}" role="alert">
+      {{ message }}
+    </div>
+    {% endfor %}
+  </div>
+  {% endif %}
+
+  {# ── Main content ───────────────────────────────────────── #}
+  <main id="main-content" role="main">
+    {% block content %}{% endblock %}
+  </main>
+
+  {# ── Footer ─────────────────────────────────────────────── #}
+  {% block footer %}
+  <footer style="border-top: 1px solid var(--color-border); padding: var(--space-6) 0; margin-top: var(--space-16);">
+    <div class="container flex items-center justify-between gap-4" style="flex-wrap: wrap;">
+      <span class="text-sm text-muted">© 2026 SeatLock. All rights reserved.</span>
+      <span class="text-xs text-muted">Built for Alpha Hackathon 2026</span>
+    </div>
+  </footer>
+  {% endblock footer %}
+
+  {# ── Scripts ────────────────────────────────────────────── #}
+  <script src="{{ url_for('static', path='js/qrcode.min.js') }}"></script>
+  <script src="{{ url_for('static', path='js/api.js') }}"></script>
+  <script src="{{ url_for('static', path='js/main.js') }}"></script>
+  {% block scripts %}{% endblock %}
+
+</body>
+</html>

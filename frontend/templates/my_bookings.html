@@ -1,0 +1,218 @@
+{% extends "base.html" %}
+
+{% block title %}My Bookings{% endblock %}
+{% block meta_description %}View and manage your event bookings.{% endblock %}
+
+{% block head_extra %}
+<link rel="stylesheet" href="{{ url_for('static', path='css/bookings.css') }}" />
+{% endblock %}
+
+{% block content %}
+<div class="page-wrapper">
+<div class="container">
+
+  <div class="page-header">
+    <p class="page-header__eyebrow">Account</p>
+    <h1 class="page-header__title">My Bookings</h1>
+    <p class="page-header__subtitle">Your upcoming and past event reservations.</p>
+  </div>
+
+  {# ── Filter tabs ── #}
+  <div class="bookings-tabs" role="tablist" aria-label="Filter bookings">
+    <button class="bookings-tab active" role="tab" aria-selected="true"  data-filter="all">All</button>
+    <button class="bookings-tab"        role="tab" aria-selected="false" data-filter="upcoming">Upcoming</button>
+    <button class="bookings-tab"        role="tab" aria-selected="false" data-filter="completed">Completed</button>
+    <button class="bookings-tab"        role="tab" aria-selected="false" data-filter="cancelled">Cancelled</button>
+  </div>
+
+  {# ── Sample booking data (replace with real context var in production) ── #}
+  {% set sample_bookings = [
+    {
+      "booking_ref": "SL-20261206-0391",
+      "event_title": "Echoes of the Night — Live Concert",
+      "event_date": "Sat, 6 Dec 2026",
+      "event_time": "7:30 PM",
+      "venue": "The Forum, Mumbai",
+      "category": "Music",
+      "seats": ["A5", "A6"],
+      "status": "confirmed",
+      "booked_at": "18 Nov 2026 · 09:14 AM",
+      "category_color": "accent"
+    },
+    {
+      "booking_ref": "SL-20261219-1047",
+      "event_title": "TechConf 2026 — Annual Summit",
+      "event_date": "Fri, 19 Dec 2026",
+      "event_time": "9:00 AM",
+      "venue": "HICC, Hyderabad",
+      "category": "Conference",
+      "seats": ["D3"],
+      "status": "confirmed",
+      "booked_at": "19 Nov 2026 · 02:30 PM",
+      "category_color": "success"
+    },
+    {
+      "booking_ref": "SL-20261101-5872",
+      "event_title": "Autumn Jazz Festival",
+      "event_date": "Sat, 1 Nov 2026",
+      "event_time": "5:00 PM",
+      "venue": "Prithvi Theatre, Mumbai",
+      "category": "Music",
+      "seats": ["C8", "C9", "C10"],
+      "status": "completed",
+      "booked_at": "22 Oct 2026 · 11:55 AM",
+      "category_color": "accent"
+    },
+    {
+      "booking_ref": "SL-20261015-2241",
+      "event_title": "Design Systems Summit",
+      "event_date": "Thu, 15 Oct 2026",
+      "event_time": "10:00 AM",
+      "venue": "91Springboard, Bengaluru",
+      "category": "Conference",
+      "seats": ["B2"],
+      "status": "cancelled",
+      "booked_at": "02 Oct 2026 · 08:40 AM",
+      "category_color": "success"
+    }
+  ] %}
+
+  {% set booking_list = bookings if bookings else sample_bookings %}
+
+  {% if booking_list %}
+  <div class="bookings-list" id="bookings-list" role="list">
+    {% for booking in booking_list %}
+    <article
+      class="booking-card card"
+      data-status="{{ booking.status }}"
+      role="listitem"
+    >
+      <div class="booking-card__inner">
+
+        {# Left: event info #}
+        <div class="booking-card__info">
+          <div class="booking-card__top">
+            <span class="badge badge--{{ booking.category_color }}">{{ booking.category }}</span>
+            {% if booking.status == 'confirmed' %}
+              <span class="badge badge--success badge--dot">Confirmed</span>
+            {% elif booking.status == 'completed' %}
+              <span class="badge badge--default">Completed</span>
+            {% elif booking.status == 'cancelled' %}
+              <span class="badge badge--danger">Cancelled</span>
+            {% elif booking.status == 'held' %}
+              <span class="badge badge--warning badge--dot">On hold</span>
+            {% endif %}
+          </div>
+
+          <h2 class="booking-card__title">{{ booking.event_title }}</h2>
+
+          <div class="booking-card__meta">
+            <span class="booking-card__meta-item">
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none"
+                   stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                <rect width="18" height="18" x="3" y="4" rx="2"/><line x1="16" x2="16" y1="2" y2="6"/>
+                <line x1="8" x2="8" y1="2" y2="6"/><line x1="3" x2="21" y1="10" y2="10"/>
+              </svg>
+              {{ booking.event_date }} · {{ booking.event_time }}
+            </span>
+            <span class="booking-card__meta-item">
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none"
+                   stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                <path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0Z"/><circle cx="12" cy="10" r="3"/>
+              </svg>
+              {{ booking.venue }}
+            </span>
+          </div>
+
+          <div class="booking-card__seats">
+            <span class="text-xs text-muted">Seats:&nbsp;</span>
+            {% for seat in booking.seats %}
+              <span class="booking-seat-tag">{{ seat }}</span>
+            {% endfor %}
+          </div>
+        </div>
+
+        {# Divider #}
+        <div class="booking-card__divider" aria-hidden="true"></div>
+
+        {# Right: booking details & actions #}
+        <div class="booking-card__actions">
+          <div class="booking-card__ref">
+            <span class="text-xs text-muted">Booking ref</span>
+            <code class="booking-card__ref-code">{{ booking.booking_ref }}</code>
+          </div>
+          <div class="booking-card__booked-at">
+            <span class="text-xs text-muted">Booked on</span>
+            <span class="text-sm text-secondary">{{ booking.booked_at }}</span>
+          </div>
+
+          <div class="booking-card__cta">
+            <button class="btn btn-secondary btn-sm" aria-label="View ticket for {{ booking.event_title }}">
+              View ticket
+            </button>
+            {% if booking.status == 'confirmed' %}
+            <button
+              class="btn btn-danger btn-sm"
+              aria-label="Cancel booking {{ booking.booking_ref }}"
+              data-booking-ref="{{ booking.booking_ref }}"
+              data-action="cancel"
+            >
+              Cancel
+            </button>
+            {% endif %}
+          </div>
+        </div>
+
+      </div>
+    </article>
+    {% endfor %}
+  </div>
+
+  {% else %}
+  <div class="empty-state">
+    <div class="empty-state__icon">🎟️</div>
+    <h2 class="empty-state__title">No bookings yet</h2>
+    <p class="empty-state__text">You haven't booked any events. Find something you'll love.</p>
+    <a href="{{ url_for('events') }}" class="btn btn-primary">Browse events</a>
+  </div>
+  {% endif %}
+
+</div>
+</div>
+
+{# ── Ticket QR Modal ── #}
+<div id="ticket-modal" class="modal-backdrop" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.75); z-index:1000; align-items:center; justify-content:center;">
+  <div class="card" style="max-width:440px; width:90%; padding:var(--space-6); background:var(--color-surface); border:1px solid var(--color-border); border-radius:12px; position:relative; box-shadow: 0 25px 50px -12px rgba(0,0,0,0.5);">
+    <button id="close-ticket-modal" style="position:absolute; top:16px; right:16px; background:none; border:none; color:var(--color-text-secondary); cursor:pointer; font-size:18px;">✕</button>
+    <div style="text-align:center;">
+      <span class="badge badge--accent" style="margin-bottom:8px; display:inline-block;">SEATLOCK TICKET PASS</span>
+      <h2 id="modal-event-title" style="font-size:1.25rem; font-weight:700; margin-bottom:4px;">Event Title</h2>
+      <p id="modal-booking-ref" class="text-xs text-muted" style="margin-bottom:16px; font-family:monospace;">Ref: SL-...</p>
+      
+      <div id="ticket-qr-container" style="display:inline-block; padding:12px; background:#ffffff; border-radius:8px; margin-bottom:16px;"></div>
+      
+      <div style="background:rgba(255,255,255,0.04); padding:12px; border-radius:8px; margin-bottom:16px; text-align:left;">
+        <div class="flex justify-between text-sm" style="margin-bottom:6px;">
+          <span class="text-muted">Reserved Seats:</span>
+          <strong id="modal-seats" style="color:var(--color-accent);">A1</strong>
+        </div>
+        <div class="flex justify-between text-sm">
+          <span class="text-muted">Gate Status:</span>
+          <span id="modal-checkin-status" class="badge badge--success">Valid</span>
+        </div>
+      </div>
+
+      <div style="text-align:left; margin-bottom:14px;">
+        <span class="text-xs text-muted" style="display:block; margin-bottom:4px;">Signed Ticket Token (HS256):</span>
+        <textarea id="modal-ticket-token" readonly style="width:100%; height:55px; font-size:10px; font-family:monospace; background:rgba(0,0,0,0.3); border:1px solid var(--color-border); border-radius:6px; color:var(--color-text-secondary); padding:6px; resize:none;"></textarea>
+      </div>
+
+      <button id="copy-token-btn" class="btn btn-secondary btn-sm btn-full">Copy Token (for Gate Check-In)</button>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script src="{{ url_for('static', path='js/bookings.js') }}"></script>
+{% endblock %}
