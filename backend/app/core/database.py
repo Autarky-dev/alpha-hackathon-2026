@@ -121,22 +121,29 @@ def get_db() -> Generator[Session, None, None]:
 # ---------------------------------------------------------------------------
 # 5. Startup connection check
 # ---------------------------------------------------------------------------
-def verify_database_connection() -> None:
+def verify_database_connection(max_retries: int = 5, retry_delay: float = 2.0) -> None:
     """
     Runs a lightweight query to confirm the database is reachable.
-    Call this once at application startup (from main.py lifespan).
-
-    Raises OperationalError with a clear message if the connection fails,
-    rather than letting the application start in a broken state.
+    Retries up to max_retries with a delay between attempts to handle
+    cloud database warm-up / cold starts.
     """
-    try:
-        with engine.connect() as connection:
-            connection.execute(text("SELECT 1"))
-        print("[database] Connection to PostgreSQL verified successfully.")
-    except OperationalError as exc:
-        # Re-raise without the original exception message, which may contain
-        # the connection URL (and therefore the password).
-        raise RuntimeError(
-            "Could not connect to the database. "
-            "Check DB_HOST, DB_PORT, DB_NAME, DB_USER, and DB_PASSWORD in your .env file."
-        ) from None
+    import time
+
+    for attempt in range(1, max_retries + 1):
+        try:
+            with engine.connect() as connection:
+                connection.execute(text("SELECT 1"))
+            print("[database] Connection to PostgreSQL verified successfully.")
+            return
+        except OperationalError:
+            if attempt < max_retries:
+                print(
+                    f"[database] Connection attempt {attempt}/{max_retries} failed. "
+                    f"Retrying in {retry_delay}s..."
+                )
+                time.sleep(retry_delay)
+            else:
+                raise RuntimeError(
+                    "Could not connect to the database. "
+                    "Check DATABASE_URL or DB_* settings in your configuration."
+                ) from None

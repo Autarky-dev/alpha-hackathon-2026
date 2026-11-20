@@ -66,12 +66,20 @@ def ensure_enum_values() -> None:
         if res:
             conn.execute(text("ALTER TYPE user_role ADD VALUE IF NOT EXISTS 'student'"))
             conn.execute(text("ALTER TYPE user_role ADD VALUE IF NOT EXISTS 'organizer'"))
-        # Safe non-destructive column additions
-        conn.execute(text("ALTER TABLE events ADD COLUMN IF NOT EXISTS organizer_id UUID REFERENCES users(id) ON DELETE SET NULL"))
-        conn.execute(text("ALTER TABLE bookings ADD COLUMN IF NOT EXISTS checked_in_at TIMESTAMP WITH TIME ZONE DEFAULT NULL"))
-        conn.execute(text("ALTER TABLE booking_seats ADD COLUMN IF NOT EXISTS checked_in_at TIMESTAMP WITH TIME ZONE DEFAULT NULL"))
-        conn.execute(text("CREATE INDEX IF NOT EXISTS ix_events_organizer_id ON events (organizer_id)"))
-        conn.execute(text("CREATE INDEX IF NOT EXISTS ix_bookings_checked_in_at ON bookings (checked_in_at)"))
+        # Safe non-destructive column additions (only if tables exist)
+        res_events = conn.execute(text("SELECT 1 FROM information_schema.tables WHERE table_schema = 'public' AND table_name = 'events'")).scalar()
+        if res_events:
+            conn.execute(text("ALTER TABLE events ADD COLUMN IF NOT EXISTS organizer_id UUID REFERENCES users(id) ON DELETE SET NULL"))
+            conn.execute(text("CREATE INDEX IF NOT EXISTS ix_events_organizer_id ON events (organizer_id)"))
+
+        res_bookings = conn.execute(text("SELECT 1 FROM information_schema.tables WHERE table_schema = 'public' AND table_name = 'bookings'")).scalar()
+        if res_bookings:
+            conn.execute(text("ALTER TABLE bookings ADD COLUMN IF NOT EXISTS checked_in_at TIMESTAMP WITH TIME ZONE DEFAULT NULL"))
+            conn.execute(text("CREATE INDEX IF NOT EXISTS ix_bookings_checked_in_at ON bookings (checked_in_at)"))
+
+        res_bseats = conn.execute(text("SELECT 1 FROM information_schema.tables WHERE table_schema = 'public' AND table_name = 'booking_seats'")).scalar()
+        if res_bseats:
+            conn.execute(text("ALTER TABLE booking_seats ADD COLUMN IF NOT EXISTS checked_in_at TIMESTAMP WITH TIME ZONE DEFAULT NULL"))
 
 
 def create_tables() -> None:

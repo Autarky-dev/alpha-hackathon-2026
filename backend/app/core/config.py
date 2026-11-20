@@ -91,6 +91,11 @@ class Settings(BaseSettings):
     SEED_ADMIN_USERNAME: str = "admin_user"
     SEED_ADMIN_PASSWORD: str = "AdminPass123!"
 
+    # --- Database Auto-Initialization & Seeding ---
+    # Safe, idempotent startup initialization compatible with Render Free Tier
+    AUTO_INIT_DB: bool = True
+    AUTO_SEED_DATA: bool = True
+
     # _ENV_FILE is an absolute path, so pydantic-settings finds .env correctly
     # regardless of which directory the process was launched from.
     # extra="ignore" means unknown variables in .env are silently skipped

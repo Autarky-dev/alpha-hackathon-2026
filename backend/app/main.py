@@ -22,6 +22,7 @@ from app.api.v1.bookings import router as bookings_router
 from app.api.v1.events import router as events_router
 from app.core.config import settings
 from app.core.database import verify_database_connection
+from app.core.db_init import init_database_on_startup
 from app.services.hold_cleaner import start_hold_cleaner, stop_hold_cleaner
 
 
@@ -33,6 +34,8 @@ async def lifespan(app: FastAPI):
     # --- Startup ---
     print("[startup] SeatLock API starting up...")
     verify_database_connection()
+    if settings.AUTO_INIT_DB:
+        init_database_on_startup()
     # Start periodic background sweeper for expired holds (every 10s)
     start_hold_cleaner(interval_seconds=10)
     yield

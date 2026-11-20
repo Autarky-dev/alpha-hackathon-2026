@@ -29,7 +29,10 @@ from app.models.seat import Seat, SeatStatus
 from app.models.user import User, UserRole
 from app.schemas.event import EventCreate
 from app.services import event_service
-from scripts.seed_users import seed_test_users
+try:
+    from scripts.seed_users import seed_test_users
+except ImportError:
+    from backend.scripts.seed_users import seed_test_users
 
 
 def seed_demo_data():
